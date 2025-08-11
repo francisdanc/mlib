@@ -1,0 +1,146 @@
+package mlib.model;
+
+import mlib.network.activations.sigmoid;
+import mlib.network.layers.DenseLayer;
+
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Stack;
+
+import mlib.matrixes.InputMatrix;
+import mlib.matrixes.MatrixMath;
+import mlib.network.activations.*;
+public class Model {
+	private ArrayList<DenseLayer> layers = new ArrayList<DenseLayer>();
+	
+	
+	public Model() {}
+
+
+	public ArrayList<DenseLayer> getLayers() {
+		return layers;
+	}
+
+
+	public void setLayers(ArrayList<DenseLayer> layers) {
+		this.layers = layers;
+	};
+	
+	public void addLayer(DenseLayer layer) {
+		this.layers.add(layer);
+	}
+	
+	public void train(InputMatrix inputs, double d, int epochs, InputMatrix expected) {
+		if(this.layers.size() < 1) {
+			throw new RuntimeException("Model must contain at least one layer");
+		}
+		
+		ActivationFunction sig = new sigmoid();
+		DenseLayer inputlayer = layers.getFirst();
+		Stack<InputMatrix> weighted_sums = new Stack<InputMatrix>();
+		Stack<InputMatrix> activations = new Stack<InputMatrix>(); // The stack of activations needed to calculate derivatives for backpropogation
+		inputlayer.setInputs(inputs);
+		inputlayer.initialiseWeights();
+
+		System.out.println(inputlayer.getInputs().getBatchSize() + " " + inputlayer.getInputs().getFeatureLength());
+		
+		for(DenseLayer layer : layers) {
+			layer.initialiseWeights();
+		}
+		
+		for(int e = 0; e < epochs; e++) {
+			weighted_sums.clear();
+			activations.clear();
+			
+			
+			InputMatrix ws_current = inputlayer.Sum();
+			InputMatrix a_current = sig.activate(ws_current);
+			
+			//System.out.println(inputlayer.getInputs().getBatchSize() + " " + inputlayer.getInputs().getFeatureLength());
+			
+			weighted_sums.push(ws_current);
+			activations.push(a_current);
+			
+			for(int i = 1; i < layers.size(); i++) {
+				DenseLayer current_layer = layers.get(i);
+				current_layer.setInputs(a_current);
+
+				ws_current = current_layer.Sum();
+				a_current = sig.activate(ws_current);
+				
+				weighted_sums.push(ws_current);
+				activations.push(a_current);
+			}
+			
+			//System.out.println(inputlayer.getInputs().getBatchSize() + " " + inputlayer.getInputs().getFeatureLength());
+			
+			InputMatrix prevActivations = activations.pop();
+			InputMatrix ws_previous = weighted_sums.pop();
+			
+		    if(prevActivations.getFeatureLength() != expected.getFeatureLength()) {
+		        throw new RuntimeException("Output layer and expected output sizes do not match");
+		    };
+		    
+		    InputMatrix error = new InputMatrix(prevActivations.getBatchSize(), prevActivations.getFeatureLength());
+		    error.setInputMatrix(MatrixMath.subtractElementWise(prevActivations.getInputMatrix(), expected.getInputMatrix()));
+		    
+		    double MSE = MatrixMath.sum(MatrixMath.elementWiseSquare(error.getInputMatrix())) / prevActivations.getBatchSize();
+		    
+		    InputMatrix outputDerivative = new InputMatrix(prevActivations.getBatchSize(), prevActivations.getFeatureLength());
+		    outputDerivative.setInputMatrix(MatrixMath.getDerivative(sig, ws_previous.getInputMatrix())); 
+		    
+		    InputMatrix delta = new InputMatrix(prevActivations.getBatchSize(), prevActivations.getFeatureLength());
+		    delta.setInputMatrix(MatrixMath.hadamard(error.getInputMatrix(), outputDerivative.getInputMatrix()));
+		    
+		    Stack<double[][]> weightedGradients = new Stack<double[][]>();
+		    
+		    for(int i = layers.size() - 1; i >=0; i--) {
+		    	DenseLayer layer = layers.get(i);
+		    	
+		    	if(i ==0) {
+		    		prevActivations = inputs;
+		    	}else {
+		    		prevActivations = activations.pop();
+		    	}
+		    	
+		    	double[][] prev_activations_T = MatrixMath.transpose(prevActivations.getInputMatrix());
+		    	double[][] w_grad = MatrixMath.dot(prev_activations_T, delta.getInputMatrix());
+		    	
+		    	w_grad = MatrixMath.scalarMultiply(d, w_grad);
+//		    	for(double[] row : w_grad) {
+//	    			System.out.println("epoch: " + e + " " + Arrays.toString(row));
+//	    		}
+		    	weightedGradients.add(w_grad);
+		    	
+		    	if(i > 0) {
+		    		double[][] current_weights = layer.getWeightMatrix().getWeights();
+		    		double[][] weights_T = MatrixMath.transpose(current_weights);
+		    		
+		    		InputMatrix prevWs = weighted_sums.pop();
+		    		double[][] currentDerivative = MatrixMath.getDerivative(sig, prevWs.getInputMatrix());
+		    		
+		    		double[][] newDelta = MatrixMath.hadamard(MatrixMath.dot(delta.getInputMatrix(), weights_T), currentDerivative);
+		    		delta.setInputMatrix(newDelta);
+		    		
+		    		
+		    	}
+		    }
+		    
+		    // Update the weights
+		    
+		    for(int i = 0; i < layers.size(); i++) {
+		    	DenseLayer layer = layers.get(i);
+		    	double[][] currentWeights = layer.getWeightMatrix().getWeights();
+		    	double[][] grad = weightedGradients.pop();
+		    	
+		    	layer.getWeightMatrix().setWeights(MatrixMath.subtractElementWise(currentWeights, grad));
+		    }
+		    
+		    System.out.printf("epoch: %d, Loss: %.3f%n", e, MSE);
+		}
+	    
+		}
+	}
+	
+	
