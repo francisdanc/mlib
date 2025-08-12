@@ -1,6 +1,6 @@
 ## MLib 
 
-MLib is my own personal machine library. I've begun building this solely for learning purposes and plan to expand on it with several different machine learning algorithms.
+MLib is my own personal machine learning library. I've begun building this solely for learning purposes and plan to expand on it with several different machine learning algorithms.
 Currently there are some errors in the xor example, the training converges at an MSE of around 0.25 indicating that it is not properly learning the input patterns. To improve this
 I intend to add a bias to the network.
 
