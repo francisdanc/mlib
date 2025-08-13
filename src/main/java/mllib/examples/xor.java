@@ -24,12 +24,7 @@ public class xor {
 			expected.setInputMatrix(e);
 		
 			
-		
-			
-			
-			
-			
-			model.train(input, 0.1, 10000, expected);
+			model.train(input, 0.01, 50000, expected);
 		}
 		
 

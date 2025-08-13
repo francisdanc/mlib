@@ -1,5 +1,7 @@
 package mlib.network.layers;
 
+import java.util.Arrays;
+
 import mlib.matrixes.InputMatrix;
 import mlib.matrixes.MatrixMath;
 import mlib.matrixes.WeightMatrix;
@@ -44,11 +46,27 @@ public class DenseLayer {
 		if(this.inputs == null) {
 			throw new RuntimeException("The inputs for this layer have not been initialised.");
 		}
-		double[][] raw = MatrixMath.addElements(MatrixMath.dot(inputs.getInputMatrix(), weights.getWeights()), this.bias);
+		double[][] raw = MatrixMath.addElements(MatrixMath.dot(this.inputs.getInputMatrix(), this.weights.getWeights()), this.bias);
 		
 		InputMatrix output = new InputMatrix(raw.length, raw[0].length);
 		
 		output.setInputMatrix(raw);
+		
+//		System.out.println("Inputs:");
+//		MatrixMath.printMatrix(this.inputs.getInputMatrix());
+//
+//		System.out.println("Weights:");
+//		MatrixMath.printMatrix(this.weights.getWeights());
+//
+//		System.out.println("Bias:");
+//		System.out.println(Arrays.toString(this.bias));
+//
+//		System.out.println("Dot product:");
+//		MatrixMath.printMatrix(MatrixMath.dot(this.inputs.getInputMatrix(), this.weights.getWeights()));
+//
+//		System.out.println("Final output:");
+//		MatrixMath.printMatrix(raw);
+
 		
 		return output;
 	}

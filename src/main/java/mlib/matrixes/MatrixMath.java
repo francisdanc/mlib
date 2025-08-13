@@ -93,16 +93,30 @@ public class MatrixMath {
 		}
 		
 		public static double[][] getDerivative(ActivationFunction af, double[][] mat){
-			
+			double[][] result = new double[mat.length][mat[0].length];
+
 			for(int i = 0; i < mat.length; i++) {
 				for(int j = 0; j < mat[0].length; j++) {
-					mat[i][j] = af.derivative(mat[i][j]);
+//					System.out.println("Derivative input: " + mat[i][j]);
+//					System.out.println("Derivative output: " + af.derivative(mat[i][j]));
+
+					result[i][j] = af.derivative(mat[i][j]);
 				}
 			}
 			
-			return mat;
+			return result;
 		}
 		
+		public static double[][] cloneMatrix(double[][] mat) {
+		    double[][] clone = new double[mat.length][mat[0].length];
+		    for (int i = 0; i < mat.length; i++) {
+		        for (int j = 0; j < mat[0].length; j++) {
+		            clone[i][j] = mat[i][j];
+		        }
+		    }
+		    return clone;
+		}
+
 		
 		public static double[][] elementWiseSquare(double[][] mat) {
 			
@@ -146,6 +160,17 @@ public class MatrixMath {
 			
 			return output;
 		}
+		
+		public static void printMatrix(double[][] m) {
+		    for (int i = 0; i < m.length; i++) {
+		        System.out.print("[ ");
+		        for (int j = 0; j < m[0].length; j++) {
+		            System.out.printf("%.4f ", m[i][j]); // 4 decimal places
+		        }
+		        System.out.println("]");
+		    }
+		}
+
 		
 		
 		public static void main(String args[]) {

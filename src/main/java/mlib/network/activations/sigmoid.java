@@ -18,6 +18,7 @@ public class sigmoid implements ActivationFunction {
 		
 		for(int i = 0; i < mat.getInputMatrix().length; i++) {
 			for(int j = 0; j < mat.getInputMatrix()[0].length; j++) {
+				
 				activations.getInputMatrix()[i][j] = activate(mat.getInputMatrix()[i][j]);
 			}
 		}
@@ -28,7 +29,8 @@ public class sigmoid implements ActivationFunction {
 	
 	@Override
 	public double derivative(double a) {
-		return a * (1 - activate(a));
+		
+		return a * (1 - a);
 	}
 
 }
