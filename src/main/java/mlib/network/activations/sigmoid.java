@@ -14,19 +14,21 @@ public class sigmoid implements ActivationFunction {
 	@Override
 	public InputMatrix activate(InputMatrix mat){
 		
+		InputMatrix activations = new InputMatrix(mat.getBatchSize(), mat.getFeatureLength());
+		
 		for(int i = 0; i < mat.getInputMatrix().length; i++) {
 			for(int j = 0; j < mat.getInputMatrix()[0].length; j++) {
-				mat.getInputMatrix()[i][j] = activate(mat.getInputMatrix()[i][j]);
+				activations.getInputMatrix()[i][j] = activate(mat.getInputMatrix()[i][j]);
 			}
 		}
 		
 		
-		return mat;
+		return activations;
 	}
 	
 	@Override
 	public double derivative(double a) {
-		return activate(a) * (1 - activate(a));
+		return a * (1 - activate(a));
 	}
 
 }

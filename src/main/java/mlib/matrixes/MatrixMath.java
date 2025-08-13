@@ -130,7 +130,22 @@ public class MatrixMath {
 			return sum;
 		}
 		
-		
+		public static double[][]addElements(double[][] mat1, double[]mat2){
+			
+			double[][] output = new double[mat1.length][mat2.length];
+			
+			if(mat1[0].length != mat2.length) {
+				throw new IllegalArgumentException("addition matrix must equal the size of each row");
+			}
+			
+			for(int i = 0; i < mat1.length; i++) {
+				for(int j = 0; j < mat1[0].length; j++) {
+					output[i][j] = mat1[i][j] + mat2[j];
+				}
+			}
+			
+			return output;
+		}
 		
 		
 		public static void main(String args[]) {

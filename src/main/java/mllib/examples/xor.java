@@ -8,8 +8,8 @@ public class xor {
 
 		public static void main(String args[]) {
 			Model model = new Model();
-			DenseLayer h1 = new DenseLayer(2,2);
-			DenseLayer out = new DenseLayer(1,2);
+			DenseLayer h1 = new DenseLayer(3,2);
+			DenseLayer out = new DenseLayer(1,3);
 			
 			
 			
@@ -29,7 +29,7 @@ public class xor {
 			
 			
 			
-			model.train(input, 0.05, 1000, expected);
+			model.train(input, 0.1, 10000, expected);
 		}
 		
 

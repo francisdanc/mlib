@@ -10,12 +10,14 @@ public class DenseLayer {
 	private int height;
 	private InputMatrix inputs = null;
 	private WeightMatrix weights = null;
+	private double[] bias;
 	private ActivationFunction af = new sigmoid();
 	private int num_inputs;
 	
 	public DenseLayer(int h, int i) {
 		this.height = h;		
 		this.num_inputs = i;
+		this.bias = new double[h];
 	}
 	
 	
@@ -24,12 +26,16 @@ public class DenseLayer {
 	 * */
 	public void Input(InputMatrix inputs) {
 		this.inputs = inputs;
+		
 	}
 	
 	public void initialiseWeights() {
 
 		weights = new WeightMatrix();
 		weights.initialiseMatrix(this.num_inputs, this.height);
+		for(int i = 0; i < this.bias.length; i++) {
+			this.bias[i] = 0;
+		}
 	}
 	/**
 	 * Sum the inputs by the weights and apply the layers activation function to them.
@@ -38,13 +44,23 @@ public class DenseLayer {
 		if(this.inputs == null) {
 			throw new RuntimeException("The inputs for this layer have not been initialised.");
 		}
-		double[][] raw = MatrixMath.dot(inputs.getInputMatrix(), weights.getWeights());
+		double[][] raw = MatrixMath.addElements(MatrixMath.dot(inputs.getInputMatrix(), weights.getWeights()), this.bias);
 		
 		InputMatrix output = new InputMatrix(raw.length, raw[0].length);
 		
 		output.setInputMatrix(raw);
 		
 		return output;
+	}
+	
+
+	public double[] getBias() {
+		return bias;
+	}
+
+
+	public void setBias(double[] bias) {
+		this.bias = bias;
 	}
 
 
