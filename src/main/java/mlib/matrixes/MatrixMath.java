@@ -78,8 +78,8 @@ public class MatrixMath {
 				}
 			}
 			
-			System.out.println("Subtraction output: ");
-			MatrixMath.printMatrix(mat);
+//			System.out.println("Subtraction output: ");
+//			MatrixMath.printMatrix(mat);
 			return mat;
 		}
 		

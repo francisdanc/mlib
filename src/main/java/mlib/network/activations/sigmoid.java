@@ -19,6 +19,10 @@ public class sigmoid implements ActivationFunction {
 		for(int i = 0; i < mat.getInputMatrix().length; i++) {
 			for(int j = 0; j < mat.getInputMatrix()[0].length; j++) {
 				
+				double x = mat.getInputMatrix()[i][j];
+	            if (x > 50) x = 50;
+	            else if (x < -50) x = -50;
+				
 				activations.getInputMatrix()[i][j] = activate(mat.getInputMatrix()[i][j]);
 			}
 		}

@@ -40,35 +40,20 @@ public class DenseLayer {
 		}
 	}
 	/**
-	 * Sum the inputs by the weights and apply the layers activation function to them.
+	 * Return a matrix of the layers activations 
 	 * */
-	public InputMatrix Sum() {
+	public double[][] Sum(ActivationFunction af) {
 		if(this.inputs == null) {
 			throw new RuntimeException("The inputs for this layer have not been initialised.");
 		}
 		double[][] raw = MatrixMath.addElements(MatrixMath.dot(this.inputs.getInputMatrix(), this.weights.getWeights()), this.bias);
-		
-		InputMatrix output = new InputMatrix(raw.length, raw[0].length);
-		
-		output.setInputMatrix(raw);
-		
-//		System.out.println("Inputs:");
-//		MatrixMath.printMatrix(this.inputs.getInputMatrix());
-//
-//		System.out.println("Weights:");
-//		MatrixMath.printMatrix(this.weights.getWeights());
-//
-//		System.out.println("Bias:");
-//		System.out.println(Arrays.toString(this.bias));
-//
-//		System.out.println("Dot product:");
-//		MatrixMath.printMatrix(MatrixMath.dot(this.inputs.getInputMatrix(), this.weights.getWeights()));
-//
-//		System.out.println("Final output:");
-//		MatrixMath.printMatrix(raw);
-
-		
-		return output;
+		double[][] out = new double[raw.length][raw[0].length];
+		for(int i = 0; i < raw.length; i++) {
+			for(int j = 0; j < raw[0].length; j++) {
+				 out[i][j] = af.activate(raw[i][j]);
+			}
+		}
+		return out;
 	}
 	
 
