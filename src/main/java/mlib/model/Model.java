@@ -4,6 +4,7 @@ import mlib.network.activations.sigmoid;
 import mlib.network.layers.DenseLayer;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
@@ -38,8 +39,8 @@ public class Model {
 		// Set the activation function to sigmoid  and intialise the connection between the first hidden layer and the inputs
 		ActivationFunction sig = new sigmoid();
 		DenseLayer inputlayer = layers.getFirst();
-		Stack<InputMatrix> weighted_sums = new Stack<InputMatrix>();
-		Stack<InputMatrix> activations = new Stack<InputMatrix>(); // The stack of activations needed to calculate derivatives for backpropogation
+		LinkedList<InputMatrix> weighted_sums = new LinkedList<InputMatrix>();
+		LinkedList<InputMatrix> activations = new LinkedList<InputMatrix>(); // The stack of activations needed to calculate derivatives for backpropogation
 		inputlayer.setInputs(inputs);
 		inputlayer.initialiseWeights();
 
@@ -55,44 +56,62 @@ public class Model {
 			weighted_sums.clear();
 			activations.clear();
 			
+//--------------------------------------------------------Forward Pass--------------------------------------------------------------	
 			
-			InputMatrix ws_current = inputlayer.Sum();
-			InputMatrix a_current = sig.activate(ws_current);
-			
-			//System.out.println(inputlayer.getInputs().getBatchSize() + " " + inputlayer.getInputs().getFeatureLength());
-			
-			
-			// Push the weighted sums and activations for the current layer onto the stack
+			/*Get all of the activations from every layer*/
+			InputMatrix ws_current;
+			InputMatrix a_current;
+			ws_current = inputlayer.Sum();
+			a_current = sig.activate(ws_current);
 			weighted_sums.push(ws_current); // raw weighted sums from the input layer get pushed to the bottom of the stack
 			activations.push(a_current); // activations from the input layer get pushed to the bottom of the stack
 			
-			// For every layer other than the first hidden layer get calculate the weighted sums and activations and push them to the stack
-			for(int i = 1; i < layers.size(); i++) {
-				DenseLayer current_layer = layers.get(i);
-				current_layer.setInputs(a_current);
+			
+			
+			for(int i = 1; i < layers.size() ; i++) {
+				//Start at the output layer
+				
 
+				
+				DenseLayer current_layer = layers.get(i);
+					
+				current_layer.setInputs(a_current);
+	
 				ws_current = current_layer.Sum();
 				a_current = sig.activate(ws_current);
+					
+				weighted_sums.offer(ws_current); // output layer activations and weighted sums go to the top of the queue
+				activations.offer(a_current);
 				
-				weighted_sums.push(ws_current); // output layer activations and weighted sums get pushed to the top of the stack
-				activations.push(a_current);
 			}
+			
+			/*
+			 * Queue:
+			 * Back
+			 * -------
+			 * Output activations 
+			 * Input activations
+			 * -------
+			 * Front
+			 * */
+//----------------------------------------------------------------------------------------------------------------------------------
+			
 			
 			//System.out.println(inputlayer.getInputs().getBatchSize() + " " + inputlayer.getInputs().getFeatureLength());
 			
 			// Get the activations and weighted sums going from output to input by popping them from the stack
-			InputMatrix prevActivations = activations.pop();
-			InputMatrix ws_previous = weighted_sums.pop();
+			InputMatrix prevActivations = activations.poll(); // Input activations 
 			
+			DenseLayer outputLayer = layers.getLast();
 			
-		    if(prevActivations.getFeatureLength() != expected.getFeatureLength()) {
+		    if(outputLayer.getInputs().getFeatureLength() != expected.getFeatureLength()) {
 		        throw new RuntimeException("Output layer and expected output sizes do not match");
 		    };
 		    
 		    
 		    // --------------------------------- Calculate output delta ------------------------------
-		    InputMatrix error = new InputMatrix(prevActivations.getBatchSize(), prevActivations.getFeatureLength());
-		    error.setInputMatrix(MatrixMath.subtractElementWise(MatrixMath.cloneMatrix(prevActivations.getInputMatrix()), expected.getInputMatrix()));
+		    InputMatrix error = new InputMatrix(outputLayer.getInputs().getBatchSize(), outputLayer.getInputs().getFeatureLength());
+		    error.setInputMatrix(MatrixMath.subtractElementWise(MatrixMath.cloneMatrix(outputLayer.getInputs().getInputMatrix()), expected.getInputMatrix()));
 		    
 		    double MSE = (MatrixMath.sum(MatrixMath.elementWiseSquare(error.getInputMatrix()))) / (prevActivations.getBatchSize() * prevActivations.getFeatureLength());
 		    
@@ -107,32 +126,42 @@ public class Model {
 		    
 		    Stack<double[][]> weightedGradients = new Stack<double[][]>();
 		    
-		    // Calculate the bias gradients
+		 // ----------------------------Calculate the weight gradient for the output layer-----------------------
+		    System.out.println("The activations of the output layer");
+		    System.out.println("");
+		    MatrixMath.printMatrix(prevActivations.getInputMatrix());
+	    	double[][] prev_activations_T = MatrixMath.transpose(prevActivations.getInputMatrix());
+	    	System.out.println("");
+	    	MatrixMath.printMatrix(prev_activations_T);
+	    	double[][] w_grad =  MatrixMath.scalarMultiply(lr, MatrixMath.dot(prev_activations_T, delta.getInputMatrix()));
+	    	weightedGradients.push(w_grad); // Push the output layers gradients to the top of the stack
+	    	System.out.println("The w_gradients for the output layer vs the output layers weight matrix");
+	    	MatrixMath.printMatrix(w_grad);
+	    	System.out.println("");
+	    	MatrixMath.printMatrix(layers.getLast().getWeightMatrix().getWeights());
+	    // -----------------------------------------------------------------------------------------------------
 		  
-		    if(e % 200 == 0) {
-		    	System.out.printf("epoch: %d loss: %f%n", e, MSE);
-		    	System.out.println("activations: ");
-		    	for(int i = 0; i < prevActivations.getInputMatrix().length; i++) {
-		    		System.out.printf("%s %n", Arrays.toString(prevActivations.getInputMatrix()[i]));
-		    	}
-		    }
-
-		    for(int i = layers.size() - 2; i >=0; i--) {
-		    	DenseLayer layer = layers.get(i); // Exclude the output layer as the calculations were done before the loop
+//		    if(e % 200 == 0) {
+//		    	System.out.printf("epoch: %d loss: %f%n", e, MSE);
+//		    	System.out.println("activations: ");
+//		    	for(int i = 0; i < prevActivations.getInputMatrix().length; i++) {
+//		    		System.out.printf("%s %n", Arrays.toString(prevActivations.getInputMatrix()[i]));
+//		    	}
+//		    }
+	    	
+	    	// Go from the input layer to the last hidden layer
+		    for(int i = 0 ; i < layers.size() - 2; i++) {
+		    	DenseLayer layer = layers.get(i); 
 		    	
 		    	
 		    	
-		    	if(i ==0) {
-		    		prevActivations = sig.activate(weighted_sums.pop());
+		    	if(i ==0 ) {
+		    		prevActivations = sig.activate(weighted_sums.pop()); // If the first hidden layer get the activations of the weighted sums from the inputs
 		    	}else {
-		    		prevActivations = activations.pop(); 
+		    		prevActivations = activations.poll(); 
 		    	}
 		    	
-		    	// ----------------------------Calculate the weight gradient for the output layer-----------------------
-		    	double[][] prev_activations_T = MatrixMath.transpose(prevActivations.getInputMatrix());
-		    	double[][] w_grad =  MatrixMath.scalarMultiply(lr, MatrixMath.dot(prev_activations_T, delta.getInputMatrix()));
-		    	weightedGradients.push(w_grad);
-		    	// -----------------------------------------------------------------------------------------------------
+		    	
 		    	
 		    	
 //----------------------------------------------Calculate new delta---------------------------------------------------------------
@@ -151,8 +180,14 @@ public class Model {
 		    	
 //--------------------------------------------Calculate weighted gradients for hidden layer using new delta-----------------------		    	
 		    	prev_activations_T = MatrixMath.transpose(prevActivations.getInputMatrix());
+		    	System.out.println("Transposed activations of the current hidden layer");
+		    	MatrixMath.printMatrix(prev_activations_T);
 		    	w_grad =  MatrixMath.scalarMultiply(lr, MatrixMath.dot(prev_activations_T, delta.getInputMatrix()));
-
+		    	System.out.println("The weighted gradients vs the hidden layer");
+		    	MatrixMath.printMatrix(w_grad);
+		    	System.out.println("%n");
+		    	MatrixMath.printMatrix(layers.get(i).getWeightMatrix().getWeights());
+		    	
 		    	weightedGradients.push(w_grad);
 
 //--------------------------------------------------------------------------------------------------------------------------------
@@ -190,6 +225,10 @@ public class Model {
 //		    	}
 		    	double[][] grad = weightedGradients.pop();
 		    	//double[][] update = MatrixMath.scalarMultiply(lr, grad);
+		    	System.out.println("Current weights: ");
+		    	MatrixMath.printMatrix(currentWeights);
+		    	System.out.println("w_grad: ");
+		    	MatrixMath.printMatrix(w_grad);
 		    	layer.getWeightMatrix().setWeights(MatrixMath.subtractElementWise(currentWeights, grad));
 		    	
 		    	

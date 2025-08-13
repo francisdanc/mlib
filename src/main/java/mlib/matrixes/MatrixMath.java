@@ -67,6 +67,9 @@ public class MatrixMath {
 		}
 		
 		public static double[][] subtractElementWise(double[][] mat, double[][] mat1) {
+			if(mat.length != mat1.length || mat1[0].length != mat1[0].length) {
+				throw new IllegalArgumentException("Matrices must be the same dimensions for elementwise subtraction");
+			}
 			
 			
 			for(int i = 0; i < mat.length; i++) {
@@ -75,6 +78,8 @@ public class MatrixMath {
 				}
 			}
 			
+			System.out.println("Subtraction output: ");
+			MatrixMath.printMatrix(mat);
 			return mat;
 		}
 		

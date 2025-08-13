@@ -8,8 +8,8 @@ public class xor {
 
 		public static void main(String args[]) {
 			Model model = new Model();
-			DenseLayer h1 = new DenseLayer(3,2);
-			DenseLayer out = new DenseLayer(1,3);
+			DenseLayer h1 = new DenseLayer(2,2);
+			DenseLayer out = new DenseLayer(1,2);
 			
 			
 			
