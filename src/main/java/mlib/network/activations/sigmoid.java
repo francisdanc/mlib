@@ -12,18 +12,17 @@ public class sigmoid implements ActivationFunction {
 	}
 	
 	@Override
-	public InputMatrix activate(InputMatrix mat){
+	public double[][] activate(double[][] mat){
 		
-		InputMatrix activations = new InputMatrix(mat.getBatchSize(), mat.getFeatureLength());
+		double[][] activations = new double[mat.length][mat[0].length];
 		
-		for(int i = 0; i < mat.getInputMatrix().length; i++) {
-			for(int j = 0; j < mat.getInputMatrix()[0].length; j++) {
+		for(int i = 0; i < mat.length; i++) {
+			for(int j = 0; j < mat[0].length; j++) {
 				
-				double x = mat.getInputMatrix()[i][j];
-	            if (x > 50) x = 50;
-	            else if (x < -50) x = -50;
+				double x = activate(mat[i][j]);
+	            
 				
-				activations.getInputMatrix()[i][j] = activate(mat.getInputMatrix()[i][j]);
+				activations[i][j] = x;
 			}
 		}
 		
@@ -34,7 +33,7 @@ public class sigmoid implements ActivationFunction {
 	@Override
 	public double derivative(double a) {
 		
-		return a * (1 - a);
+		return activate(a) * (1 - activate(a));
 	}
 
 }

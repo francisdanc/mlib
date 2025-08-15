@@ -42,18 +42,22 @@ public class DenseLayer {
 	/**
 	 * Return a matrix of the layers activations 
 	 * */
-	public double[][] Sum(ActivationFunction af) {
+	public double[][] Sum() {
 		if(this.inputs == null) {
 			throw new RuntimeException("The inputs for this layer have not been initialised.");
 		}
 		double[][] raw = MatrixMath.addElements(MatrixMath.dot(this.inputs.getInputMatrix(), this.weights.getWeights()), this.bias);
-		double[][] out = new double[raw.length][raw[0].length];
-		for(int i = 0; i < raw.length; i++) {
-			for(int j = 0; j < raw[0].length; j++) {
-				 out[i][j] = af.activate(raw[i][j]);
-			}
-		}
-		return out;
+		
+//		System.out.println("raw weighted sums before activation");
+//		MatrixMath.printMatrix(raw);
+		
+//		double[][] out = new double[raw.length][raw[0].length];
+//		for(int i = 0; i < raw.length; i++) {
+//			for(int j = 0; j < raw[0].length; j++) {
+//				 out[i][j] = af.activate(raw[i][j]);
+//			}
+//		}
+		return raw;
 	}
 	
 
@@ -107,6 +111,6 @@ public class DenseLayer {
 	}
 	
 	
-	
+
 	
 }

@@ -14,19 +14,22 @@ public class MatrixMath {
 		public static double[][] dot(double[][] mat1, double[][] mat2) {
 			double[][] res = new double[mat1.length][mat2[0].length];
 			
+			
 			if(mat1[0].length != mat2.length) {
 				throw new RuntimeException("The dimensions of the matrixes do not line up\n mat 1 is: " + mat1.length + " " + mat1[0].length + "\nmat2 is: " + mat2.length + " " + mat2[0].length);
 			}
 			
-			
+			// LOGIC IS CORRECT 
 			for(int i = 0; i < mat1.length; i++) {
 				for(int j = 0; j < mat2[0].length; j++) {
 					double sum = 0.0;
 					
 					for(int k = 0; k < mat1[0].length; k++) {
+
 						sum += mat1[i][k] * mat2[k][j];
+
 					}
-					
+
 					res[i][j] = sum;
 				}
 			}
@@ -70,17 +73,17 @@ public class MatrixMath {
 			if(mat.length != mat1.length || mat1[0].length != mat1[0].length) {
 				throw new IllegalArgumentException("Matrices must be the same dimensions for elementwise subtraction");
 			}
-			
+			double[][] res = new double[mat1.length][mat1[0].length];
 			
 			for(int i = 0; i < mat.length; i++) {
 				for(int j = 0; j < mat[0].length; j++) {
-					mat[i][j] = mat[i][j] - mat1[i][j];
+					res[i][j] = mat[i][j] - mat1[i][j];
 				}
 			}
 			
 //			System.out.println("Subtraction output: ");
 //			MatrixMath.printMatrix(mat);
-			return mat;
+			return res;
 		}
 		
 		public static double[][] transpose(double[][] matrix) {
@@ -125,14 +128,15 @@ public class MatrixMath {
 		
 		public static double[][] elementWiseSquare(double[][] mat) {
 			
+			double[][] res = new double[mat.length][mat[0].length];
 			for(int i = 0; i < mat.length; i++) {
 				for(int j = 0; j < mat[0].length; j++) {
-					mat[i][j] = mat[i][j] * mat[i][j];
+					res[i][j] = mat[i][j] * mat[i][j];
 				}
 			}
 			
 			
-			return mat;
+			return res;
 		}
 		
 		
@@ -176,8 +180,26 @@ public class MatrixMath {
 		    }
 		}
 
-		
-		
+		public static double getL2Norm(double[][] mat) {
+		    double sumSquares = 0.0;
+		    for (int i = 0; i < mat.length; i++) {
+		        for (int j = 0; j < mat[0].length; j++) {
+		            sumSquares += mat[i][j] * mat[i][j];
+		        }
+		    }
+		    return Math.sqrt(sumSquares);
+		}
+
+		public static double[][] clipGradient(double[][] mat, double threshold) {
+		    double norm = getL2Norm(mat);
+		    if (norm <= threshold) {
+		        return cloneMatrix(mat); // No clipping needed
+		    }
+
+		    double scale = threshold / norm;
+		    return scalarMultiply(scale, mat);
+		}
+
 		public static void main(String args[]) {
 			double[][] one = {{1,2,3},{4,5,6}};
 			double[][] two = {{7,8},{9,10},{11,12}};
