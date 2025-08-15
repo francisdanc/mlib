@@ -3,7 +3,7 @@ package mllib.examples;
 import mlib.matrixes.InputMatrix;
 import mlib.model.Model;
 import mlib.network.layers.DenseLayer;
-
+import mlib.network.activations.*;
 public class xor {
 /*		 
  * 		TODO: Create functionality to import datasets
@@ -11,12 +11,14 @@ public class xor {
  * */
 		public static void main(String args[]) {
 			Model model = new Model();
-			DenseLayer h1 = new DenseLayer(2,2);
+			DenseLayer h1 = new DenseLayer(3,2);
+			DenseLayer h2 = new DenseLayer(2, 3);
 			DenseLayer out = new DenseLayer(1,2);
-			
+			ActivationFunction af = new sigmoid();
 			
 			
 			model.addLayer(h1);
+			model.addLayer(h2);
 			model.addLayer(out);
 			
 			InputMatrix input = new InputMatrix(4, 2);
@@ -27,7 +29,7 @@ public class xor {
 			expected.setInputMatrix(e);
 		
 			
-			model.train(input, 0.1, 100000, expected);
+			model.train(input, 1, 100000, expected, af);
 		}
 		
 

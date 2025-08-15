@@ -15,7 +15,7 @@ public class WeightMatrix extends Matrix{
 	 * */
 	public void initialiseMatrix(int inputs, int height) {
 	    double[][] w = new double[inputs][height];
-	    Random r = new Random(50);
+	    Random r = new Random();
 	    //double limit = Math.sqrt(6.0 / (inputs + height)); // Xavier for sigmoid
 
 	    for (int i = 0; i < inputs; i++) {

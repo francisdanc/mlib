@@ -34,25 +34,32 @@ public class Model {
 	}
 	
 	
-	public Stack<double[][]> ForwardPass(InputMatrix inputs, int e){
+	public Stack<double[][]> ForwardPass(InputMatrix inputs, int e, ActivationFunction af){
 	if(e % 500 == 0) {	
 
 	}
-			ActivationFunction sig = new sigmoid();
+			
 			Stack<double[][]> weightedSumStack = new Stack<double[][]>();
+			double[][] inputWeightedSums = new double[inputs.getInputMatrix().length][inputs.getInputMatrix()[0].length];
 			for(int i = 0; i < layers.size(); i++) {
 				double[][] weightedSums;
 				DenseLayer currentLayer = layers.get(i);
 				// If the current layer is the input layer then set the inputs to the layer as the inputs to the network
 				if(i == 0) {
 					currentLayer.setInputs(inputs);
-				}else if (i > 0){
-
-					weightedSums = layers.get(i - 1).Sum();
-					InputMatrix layerInputs = new InputMatrix(weightedSums.length, weightedSums[0].length);
-					layerInputs.setInputMatrix(sig.activate(weightedSums));
-					currentLayer.setInputs(layerInputs);
+					weightedSums = currentLayer.Sum();
 					weightedSumStack.push(weightedSums);
+					
+				}else {
+					double[][] prevWeightedSums = layers.get(i - 1).Sum();
+					
+					InputMatrix layerInputs = new InputMatrix(prevWeightedSums.length, prevWeightedSums[0].length);
+					layerInputs.setInputMatrix(af.activate(prevWeightedSums));
+					currentLayer.setInputs(layerInputs);
+					weightedSums = currentLayer.Sum();
+					if(i != layers.size() - 1) {
+						weightedSumStack.push(weightedSums);
+					}
 				}
 			}
 
@@ -61,15 +68,15 @@ public class Model {
 	
 	
 
-	private double[][] BackwardsPass(Stack<double[][]> weightedSumStack, InputMatrix expected, InputMatrix inputs, int e, double lr) {
+	private double[][] BackwardsPass(Stack<double[][]> weightedSumStack, InputMatrix expected, InputMatrix inputs, int e, double lr, ActivationFunction af) {
 		
 		int DebugWhen = 100;
 		
 	
-		ActivationFunction sig = new sigmoid();
+		
 		LinkedList<double[][]> delta = new LinkedList<double[][]>(); // Store delta calculations in LinkedList
 		LinkedList<double[][]> weightGradient = new LinkedList<double[][]>(); // Store weightGradient calculations in LinkedList
-		double MSE;
+		double MSE = 0.0;
 		double[][] output = new double[expected.getBatchSize()][expected.getFeatureLength()]; // Output is same size as expected
 		
 		
@@ -81,7 +88,7 @@ public class Model {
 				
 
 				double[][] weightedSumsOutput = layers.getLast().Sum(); // Activations of the output layer, which is the prediction
-				output = sig.activate(weightedSumsOutput);
+				output = af.activate(weightedSumsOutput);
 
 				
 				if(output.length != expected.getInputMatrix().length || output[0].length != expected.getInputMatrix()[0].length ) {
@@ -92,7 +99,7 @@ public class Model {
 				double[][] error = MatrixMath.subtractElementWise(output, expected.getInputMatrix());
 				
 
-				double[][] derivative = MatrixMath.getDerivative(sig, weightedSumsOutput);
+				double[][] derivative = MatrixMath.getDerivative(af, weightedSumsOutput);
 				// Get the delta of the output by multiplying the derivative of the output by the error
 				double[][] deltaOut = MatrixMath.hadamard(error, derivative);
 
@@ -118,35 +125,46 @@ public class Model {
 				double[][] previousWeightedSums = weightedSumStack.pop(); // Weighted sums of the previous layer (in the xor case the weighted sums of the hidden layer)
 				
 				// Calculate the weight gradient as the transpose of the previous layers activations multiplied with the deltaOutput
-				weightGradient.add(MatrixMath.dot(MatrixMath.transpose(sig.activate(previousWeightedSums)), deltaOut));
+				weightGradient.add(MatrixMath.dot(MatrixMath.transpose(af.activate(previousWeightedSums)), deltaOut));
 				
 				
-//				MSE = MatrixMath.sum(MatrixMath.elementWiseSquare(error)) / error.length; 
+				MSE = MatrixMath.sum(MatrixMath.elementWiseSquare(error)) / error.length; 
 				
 
 			}else if(i < layers.size() - 1 && i > 0) {
 				
-				// On any layer that isn't the output or the first hidden layer get the next layers weights
+		
 				double[][] layerNextWeights = layers.get(i + 1).getWeightMatrix().getWeights();
-				// Get the last calculated delta (delta of the next layer)
+	
 				double[][] prevDelta = delta.pop();
-				// Get the previous layers activations
-				double[][] prevActivations = weightedSumStack.pop();
-				double[][] derivative = MatrixMath.getDerivative(sig, prevActivations);
-				// Calculate the hidden delta as the hadamard product of dot(prevDelta, layerNexWeights.T) and the derivative of the previous layers activations
+				
+				double[][] prevWeightedSums = weightedSumStack.pop();
+
+		
+				double[][] prevActivations = af.activate(prevWeightedSums);
+				double[][] derivative = MatrixMath.getDerivative(af, layers.get(i).Sum());
+
+	
 				double[][] hiddenDelta = MatrixMath.hadamard(MatrixMath.dot(prevDelta, MatrixMath.transpose(layerNextWeights)), derivative);
-				// Add the hiddenDelta to the delta list
+				
 				delta.add(hiddenDelta);
-				// Calculate the weightGradient using the hidden delta and the previous activations
+				
 				weightGradient.add(MatrixMath.dot(MatrixMath.transpose(prevActivations), hiddenDelta));
 				
-				for(int j = 0; j < hiddenDelta.length; j++) {
-					for(int k = 0; k < hiddenDelta[0].length; k++) {
-						double[] newBias = new double[layers.get(i).getBias().length];
-						newBias[k] = layers.get(i).getBias()[k] - (lr * hiddenDelta[j][k]);
-					}
-				}
+				double[] currentBias = layers.get(i).getBias();
+				double[] biasUpdate = new double[currentBias.length];
 				
+				for (int b = 0; b < currentBias.length; b++) {
+				    // sum over all rows (samples) in inputDelta
+				    double sumDelta = 0;
+				    for (int sample = 0; sample < hiddenDelta.length; sample++) {
+				        sumDelta += hiddenDelta[sample][b];
+				    }
+				    // gradient step: subtract learning rate * gradient
+				    biasUpdate[b] = currentBias[b] - lr * (sumDelta / hiddenDelta.length);
+				}
+
+				layers.get(i).setBias(biasUpdate);
 			}else if(i == 0) {
 				
 				// Get weights of the next layer
@@ -156,7 +174,7 @@ public class Model {
 				double[][] nextDelta = delta.pop();
 				// Get the activations of the input layer
 				double[][] inputWeightedSums = layers.get(i).Sum();
-				double[][] derivative =  MatrixMath.getDerivative(sig, inputWeightedSums);
+				double[][] derivative =  MatrixMath.getDerivative(af, inputWeightedSums);
 				// Calculate the delta of this layer
 				double[][] inputDelta = MatrixMath.hadamard(MatrixMath.dot(nextDelta, MatrixMath.transpose(layerNextWeights)), derivative);
 				// Calculate 
@@ -194,16 +212,21 @@ public class Model {
 			currentWeightMatrix.setWeights(newWeights);
 			layers.get(i).setWeights(currentWeightMatrix);
 		}
+		if(e % 5000 == 0) {
+			System.out.println("Epoch: " + e);
+			System.out.printf("Loss: %f%n" , MSE);
+		}
+		
 		return output;
 		
 	}
 	
-	public void train(InputMatrix inputs, double lr, int epochs, InputMatrix expected) {
+	public void train(InputMatrix inputs, double lr, int epochs, InputMatrix expected, ActivationFunction af) {
 		if(this.layers.size() < 1) {
 			throw new RuntimeException("Model must contain at least one layer");
 		}
 		
-		ActivationFunction sig = new sigmoid();
+		
 		
 		for(int i = 0; i < layers.size(); i++) {
 			layers.get(i).initialiseWeights();
@@ -212,13 +235,13 @@ public class Model {
 		for(int e = 0; e < epochs; e++) {
 
 //		------------------------------------Forward Pass----------------------------------
-			Stack<double[][]> activationStack = ForwardPass(inputs, e);
+			Stack<double[][]> activationStack = ForwardPass(inputs, e, af);
 	//		----------------------------------------------------------------------------------
 
 	//	    -----------------------------------Backwards Pass---------------------------------
 			
 //			TODO: Figure out how to fix the MSE dependency
-			output = BackwardsPass(activationStack, expected, inputs, e, lr);
+			output = BackwardsPass(activationStack, expected, inputs, e, lr, af);
 
 	//		----------------------------------------------------------------------------------
 			
