@@ -44,7 +44,7 @@ public class Model {
 			for(int i = 0; i < layers.size(); i++) {
 				double[][] weightedSums;
 				DenseLayer currentLayer = layers.get(i);
-				// If the current layer is the input layer then set the inputs to the layer as the inputs to the network
+				
 				if(i == 0) {
 					currentLayer.setInputs(inputs);
 					weightedSums = currentLayer.Sum();
@@ -71,23 +71,21 @@ public class Model {
 	private double[][] BackwardsPass(Stack<double[][]> weightedSumStack, InputMatrix expected, InputMatrix inputs, int e, double lr, ActivationFunction af) {
 		
 		int DebugWhen = 100;
-		
-	
-		
-		LinkedList<double[][]> delta = new LinkedList<double[][]>(); // Store delta calculations in LinkedList
-		LinkedList<double[][]> weightGradient = new LinkedList<double[][]>(); // Store weightGradient calculations in LinkedList
+
+		LinkedList<double[][]> delta = new LinkedList<double[][]>(); 
+		LinkedList<double[][]> weightGradient = new LinkedList<double[][]>(); 
 		double MSE = 0.0;
-		double[][] output = new double[expected.getBatchSize()][expected.getFeatureLength()]; // Output is same size as expected
+		double[][] output = new double[expected.getBatchSize()][expected.getFeatureLength()]; 
 		
 		
 		for(int i = layers.size() - 1; i >=0; i--) {
 			
 			
-			// On the output layer, get the weight gradients directly from the error
+
 			if(i == layers.size() - 1) {
 				
 
-				double[][] weightedSumsOutput = layers.getLast().Sum(); // Activations of the output layer, which is the prediction
+				double[][] weightedSumsOutput = layers.getLast().Sum(); 
 				output = af.activate(weightedSumsOutput);
 
 				
@@ -95,28 +93,25 @@ public class Model {
 					throw new RuntimeException("The output matrix and the expected matrix are of different sizes");
 				}
 				
-				// Calculate the error by subtracting the expected from the output
+
 				double[][] error = MatrixMath.subtractElementWise(output, expected.getInputMatrix());
 				
 
 				double[][] derivative = MatrixMath.getDerivative(af, weightedSumsOutput);
-				// Get the delta of the output by multiplying the derivative of the output by the error
+
 				double[][] deltaOut = MatrixMath.hadamard(error, derivative);
 
-				
-				// Add the delta to the end of the delta LinkedList
 				delta.add(deltaOut);
 				
 				double[] currentBias = layers.get(i).getBias();
 				double[] biasUpdate = new double[currentBias.length];
 
-				// Accumulate gradients for each bias neuron
 				for (int k = 0; k < currentBias.length; k++) {
 				    double sumDelta = 0.0;
 				    for (int j = 0; j < deltaOut.length; j++) {
 				        sumDelta += deltaOut[j][k];
 				    }
-				    // Average over batch and apply learning rate
+
 				    biasUpdate[k] = currentBias[k] - (lr * (sumDelta / deltaOut.length));
 				}
 
@@ -124,7 +119,7 @@ public class Model {
 
 				double[][] previousWeightedSums = weightedSumStack.pop(); // Weighted sums of the previous layer (in the xor case the weighted sums of the hidden layer)
 				
-				// Calculate the weight gradient as the transpose of the previous layers activations multiplied with the deltaOutput
+		
 				weightGradient.add(MatrixMath.dot(MatrixMath.transpose(af.activate(previousWeightedSums)), deltaOut));
 				
 				
@@ -155,39 +150,38 @@ public class Model {
 				double[] biasUpdate = new double[currentBias.length];
 				
 				for (int b = 0; b < currentBias.length; b++) {
-				    // sum over all rows (samples) in inputDelta
+
 				    double sumDelta = 0;
 				    for (int sample = 0; sample < hiddenDelta.length; sample++) {
 				        sumDelta += hiddenDelta[sample][b];
 				    }
-				    // gradient step: subtract learning rate * gradient
+
 				    biasUpdate[b] = currentBias[b] - lr * (sumDelta / hiddenDelta.length);
 				}
 
 				layers.get(i).setBias(biasUpdate);
 			}else if(i == 0) {
 				
-				// Get weights of the next layer
+		
 				double[][] layerNextWeights = layers.get(i + 1).getWeightMatrix().getWeights();
-				// Get the previously calculated delta
 
 				double[][] nextDelta = delta.pop();
-				// Get the activations of the input layer
+
 				double[][] inputWeightedSums = layers.get(i).Sum();
 				double[][] derivative =  MatrixMath.getDerivative(af, inputWeightedSums);
-				// Calculate the delta of this layer
+
 				double[][] inputDelta = MatrixMath.hadamard(MatrixMath.dot(nextDelta, MatrixMath.transpose(layerNextWeights)), derivative);
-				// Calculate 
+
 				double[] currentBias = layers.get(i).getBias();
 				double[] biasUpdate = new double[currentBias.length];
 				
 				for (int b = 0; b < currentBias.length; b++) {
-				    // sum over all rows (samples) in inputDelta
+				   
 				    double sumDelta = 0;
 				    for (int sample = 0; sample < inputDelta.length; sample++) {
 				        sumDelta += inputDelta[sample][b];
 				    }
-				    // gradient step: subtract learning rate * gradient
+				
 				    biasUpdate[b] = currentBias[b] - lr * (sumDelta / inputDelta.length);
 				}
 
@@ -200,7 +194,7 @@ public class Model {
 			
 		}
 
-		// Update weights
+		
 		for(int i = 0; i < layers.size(); i++) {
 			WeightMatrix currentWeightMatrix = layers.get(i).getWeightMatrix();
 
@@ -234,20 +228,13 @@ public class Model {
 		double[][] output = new double[expected.getInputMatrix().length][expected.getInputMatrix().length];
 		for(int e = 0; e < epochs; e++) {
 
-//		------------------------------------Forward Pass----------------------------------
-			Stack<double[][]> activationStack = ForwardPass(inputs, e, af);
-	//		----------------------------------------------------------------------------------
 
-	//	    -----------------------------------Backwards Pass---------------------------------
-			
-//			TODO: Figure out how to fix the MSE dependency
-			output = BackwardsPass(activationStack, expected, inputs, e, lr, af);
+		Stack<double[][]> activationStack = ForwardPass(inputs, e, af);
 
-	//		----------------------------------------------------------------------------------
-			
+		output = BackwardsPass(activationStack, expected, inputs, e, lr, af);
 
-		}
-//		double[][] output = layers.getLast().Sum(sig);
+		
+	}
 		MatrixMath.printMatrix(output);
 	}
 	}
